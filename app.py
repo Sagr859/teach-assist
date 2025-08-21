@@ -17,9 +17,17 @@ import re
 # Load .env file for OpenAI key
 load_dotenv()
 
+# Get OpenAI API key from environment or Streamlit secrets
+openai_api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY", None)
+
+if not openai_api_key:
+    st.error("🚨 OpenAI API key not found! Please add it to your Streamlit secrets.")
+    st.info("Go to your Streamlit app settings and add OPENAI_API_KEY to secrets.")
+    st.stop()
+
 # Configure OpenAI LLM
 llm = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
+    api_key=openai_api_key,
     model="gpt-3.5-turbo",
     temperature=0.1,
     max_tokens=1000
@@ -145,25 +153,35 @@ footer {visibility: hidden;}
 
 /* Chat interface styling */
 .chat-interface {
-    display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 0;
+    display: flex;
+    height: 100vh;
+    max-height: 100vh;
     overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .chat-panel {
+    flex: 1.2;
     background: var(--color-white);
     border-right: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
-    max-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .content-panel {
+    flex: 0.8;
     background: var(--color-light);
     display: flex;
     flex-direction: column;
-    max-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
 }
 
 /* Chat header */
@@ -389,11 +407,23 @@ footer {visibility: hidden;}
 /* Responsive design */
 @media (max-width: 1024px) {
     .chat-interface {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        position: relative;
+        height: auto;
+    }
+    
+    .chat-panel {
+        flex: none;
+        height: auto;
+        max-height: none;
     }
     
     .content-panel {
-        display: none;
+        flex: none;
+        height: auto;
+        max-height: none;
+        border-top: 1px solid #e5e7eb;
+        border-right: none;
     }
     
     .setup-grid {
@@ -665,7 +695,10 @@ else:
     st.markdown('<div class="chat-interface">', unsafe_allow_html=True)
     
     # Left Panel - Chat
-    st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
+    col_chat, col_content = st.columns([1.2, 0.8])
+    
+    with col_chat:
+        st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
     
     # Chat Header
     st.markdown(f"""
